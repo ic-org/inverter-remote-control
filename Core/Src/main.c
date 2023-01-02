@@ -422,9 +422,18 @@ void CommunicateToNode(uint8_t function, int16_t data)
     InverterOpCondition.Vflycap = PFC_Database[26]>>3;
     InverterOpCondition.Vdcbus = PFC_Database[27]>>3;
     InverterOpCondition.Vbias = PFC_Database[28]/140;
-    InverterOpCondition.Vac_rms = (PFC_Database[29]*25)/141;
-    InverterOpCondition.Iac_rms_mA = (PFC_Database[30]*1000)/(1.41*(InverterOpCondition.Kc));
-
+    if(PFC_Database[30] < (1<<15)){
+      InverterOpCondition.Vac_rms = (PFC_Database[29]*25)/141;
+		}
+		else{
+      InverterOpCondition.Vac_rms = ((PFC_Database[29]-(1<<16))*25)/141;
+		}
+    if(PFC_Database[30] < (1<<15)){
+      InverterOpCondition.Iac_rms_mA = (PFC_Database[30]*1000)/(1.41*(InverterOpCondition.Kc));
+    }
+		else{
+      InverterOpCondition.Iac_rms_mA = ((PFC_Database[30]-(1<<16))*1000)/(1.41*(InverterOpCondition.Kc));
+		}
     if(PFC_Database[31] < (1<<15)){             // Data sent by the slave node is both positive and negative but the master can only see the positve number 
       InverterOpCondition.Pactive = PFC_Database[31]>>3;                  // So this step is required to converter unsigned integer to signed integer data
     }
