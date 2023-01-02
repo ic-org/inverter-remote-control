@@ -440,7 +440,7 @@ void CommunicateToNode(uint8_t function, int16_t data)
     else{
       InverterOpCondition.Pactive = (PFC_Database[31]-(1<<16))>>3;
     }      
-    InverterOpCondition.Fsw = 46e6/PFC_Database[32];
+    InverterOpCondition.Fsw = 48e6/PFC_Database[32];
     InverterOpCondition.Kc = PFC_Database[33];
     if(PFC_Database[51] == 255){                                                      // Reset InverterAdCondition variable when receiving the special 51 
       InverterAdCondition.Inverter_Enable = 0;                                        // request from the slave node
