@@ -22,23 +22,23 @@
 /* USER CODE BEGIN PTD */
 
 typedef struct{
-  volatile int16_t Vflycap;
-  volatile int16_t Vdcbus;
-  volatile int16_t Vbias;
-  volatile int16_t Vac_rms;
-  volatile int32_t Iac_rms_mA;
-  volatile int16_t Pactive;
-  volatile uint32_t Fsw;
-  volatile int16_t Kc;
+  volatile int16_t  v_fly_cap;        // flying capacitor voltage
+  volatile int16_t  v_dc_bus;         // DC bus voltage
+  volatile int16_t  v_bias;           // bias voltage (12V typ.)
+  volatile int16_t  v_ac_rms;         // grid voltage
+  volatile int32_t  i_ac_rms_mA;      // bidirectional AC current in mA
+  volatile int16_t  p_active;         // active power
+  volatile uint32_t f_switch;         // inverter switching frequency ( 45.8kHz / 65.2 kHz )
+  volatile int16_t  k_c;              // AC current measurement gain
 } ReadData_Typedef;
 
-ReadData_Typedef InverterOpCondition ={0,0,0,0,0,0,0,120};
+ReadData_Typedef InverterOpCondition = {0, 0, 0, 0, 0, 0, 0, 120};
 
 typedef struct{
-  volatile uint8_t Inverter_Enable;
-  volatile uint16_t Vdcbus;
-  volatile uint16_t Pactive_G2B;
-  volatile uint16_t Pactive_B2G;
+  volatile uint8_t  inverter_enable;  // enable bidirectional inverter 
+  volatile uint16_t v_dc_bus;         // DC bus voltage adjustment
+  volatile uint16_t p_active_G2B;     // active power adjustment ( grid-to-battery )
+  volatile uint16_t p_active_B2G;     // active power adjustment ( battery-to-grid )
 } WriteData_Typedef;
 
 WriteData_Typedef InverterAdCondition = {0,400,3500,3500};
@@ -95,7 +95,6 @@ static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 void FillBuffer(uint8_t *buffer, uint8_t function, int16_t data);
-int CompareBuffer(uint8_t *buf1, uint8_t *buf2, uint16_t bufSize);
 void CommunicateToNode(uint8_t function, int16_t data);
 /* USER CODE END PFP */
 
@@ -143,7 +142,7 @@ int main(void)
     
     for (index = 0; index < FUNCTION_NUM; index++)
     {
-      if(InverterAdCondition.Inverter_Enable > 0){
+      if(InverterAdCondition.inverter_enable > 0){
         HAL_GPIO_WritePin(INVERTER_ENABLE_GPIO_Port, INVERTER_ENABLE_Pin, GPIO_PIN_SET);
       }
       else{
@@ -306,21 +305,6 @@ void FillBuffer(uint8_t *buffer, uint8_t function, int16_t data)
   buffer[3] = buffer[0]^buffer[1]^buffer[2];  
 }
 
-// check if two buffers match in size
-int CompareBuffer(uint8_t *buf1, uint8_t *buf2, uint16_t bufSize)
-{
-  uint16_t i = 0;
-  for (i = 0; i < bufSize; i++)
-  {
-    if (buf1[i] != buf2[i])
-    {
-      // one of the elements did not match!
-      return 0;
-    }
-  }
-  return 1;   // both buffers match!
-}
-
 // communicate to UART node
 void CommunicateToNode(uint8_t function, int16_t data)
 {
@@ -355,40 +339,40 @@ void CommunicateToNode(uint8_t function, int16_t data)
 
       }
     }
-    InverterOpCondition.Vflycap = PFC_Database[26]>>3;
-    InverterOpCondition.Vdcbus = PFC_Database[27]>>3;
-    InverterOpCondition.Vbias = PFC_Database[28]/140;
+    InverterOpCondition.v_fly_cap = PFC_Database[26]>>3;
+    InverterOpCondition.v_dc_bus = PFC_Database[27]>>3;
+    InverterOpCondition.v_bias = PFC_Database[28]/140;
     if(PFC_Database[30] < (1<<15)){
-      InverterOpCondition.Vac_rms = (PFC_Database[29]*25)/141;
+      InverterOpCondition.v_ac_rms = (PFC_Database[29]*25)/141;
 		}
 		else{
-      InverterOpCondition.Vac_rms = ((PFC_Database[29]-(1<<16))*25)/141;
+      InverterOpCondition.v_ac_rms = ((PFC_Database[29]-(1<<16))*25)/141;
 		}
     if(PFC_Database[30] < (1<<15)){
-      InverterOpCondition.Iac_rms_mA = (PFC_Database[30]*1000)/(1.41*(InverterOpCondition.Kc));
+      InverterOpCondition.i_ac_rms_mA = (PFC_Database[30]*1000)/(1.41*(InverterOpCondition.k_c));
     }
 		else{
-      InverterOpCondition.Iac_rms_mA = ((PFC_Database[30]-(1<<16))*1000)/(1.41*(InverterOpCondition.Kc));
+      InverterOpCondition.i_ac_rms_mA = ((PFC_Database[30]-(1<<16))*1000)/(1.41*(InverterOpCondition.k_c));
 		}
     if(PFC_Database[31] < (1<<15)){             // Data sent by the slave node is both positive and negative but the master can only see the positve number 
-      InverterOpCondition.Pactive = PFC_Database[31]>>3;                  // So this step is required to converter unsigned integer to signed integer data
+      InverterOpCondition.p_active = PFC_Database[31]>>3;                  // So this step is required to converter unsigned integer to signed integer data
     }
     else{
-      InverterOpCondition.Pactive = (PFC_Database[31]-(1<<16))>>3;
+      InverterOpCondition.p_active = (PFC_Database[31]-(1<<16))>>3;
     }      
-    InverterOpCondition.Fsw = 48e6/PFC_Database[32];
-    InverterOpCondition.Kc = PFC_Database[33];
+    InverterOpCondition.f_switch = 48e6/PFC_Database[32];
+    InverterOpCondition.k_c = PFC_Database[33];
     if(PFC_Database[51] == 255){                                                      // Reset InverterAdCondition variable when receiving the special 51 
-      InverterAdCondition.Inverter_Enable = 0;                                        // request from the slave node
-      InverterAdCondition.Vdcbus = 400;
-      InverterAdCondition.Pactive_B2G = 3500;
-      InverterAdCondition.Pactive_G2B = 3500;
+      InverterAdCondition.inverter_enable = 0;                                        // request from the slave node
+      InverterAdCondition.v_dc_bus = 400;
+      InverterAdCondition.p_active_B2G = 3500;
+      InverterAdCondition.p_active_G2B = 3500;
       PFC_Database[51] = 0;
     }
 
-    PFC_Database[1] = InverterAdCondition.Vdcbus<<3;
-    PFC_Database[2] = InverterAdCondition.Pactive_G2B<<3;
-    PFC_Database[3] = InverterAdCondition.Pactive_B2G<<3;
+    PFC_Database[1] = InverterAdCondition.v_dc_bus<<3;
+    PFC_Database[2] = InverterAdCondition.p_active_G2B<<3;
+    PFC_Database[3] = InverterAdCondition.p_active_B2G<<3;
  
 }
 
