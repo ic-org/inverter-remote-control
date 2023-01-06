@@ -64,19 +64,10 @@ void Error_Handler(void);
 #define USART2_TX_GPIO_Port GPIOA
 #define USART2_RX_Pin GPIO_PIN_3
 #define USART2_RX_GPIO_Port GPIOA
-
-#define USART1_TX_Pin GPIO_PIN_4
-#define USART1_TX_GPIO_Port GPIOC
-#define USART1_RX_Pin GPIO_PIN_5
-#define USART1_RX_GPIO_Port GPIOC
-
-
-#define INVERTER_ENABLE_Pin GPIO_PIN_10
-#define INVERTER_ENABLE_GPIO_Port GPIOA
-
-
 #define LED_GREEN_Pin GPIO_PIN_5
 #define LED_GREEN_GPIO_Port GPIOA
+#define INVERTER_ENABLE_Pin GPIO_PIN_10
+#define INVERTER_ENABLE_GPIO_Port GPIOA
 #define TMS_Pin GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
